@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en"></html>>
+<head>
+    <meta charset="UTF-8">
+    <title>Report</title>
+    <style>
+        
+    </style>
+</head>
+<body>
+    <h1>Internal IT Audit Report</h1>
+
+    {% for host in reports %}
+        <h2>Machine: {{ host.hostname }}</h2>
+
+        <table border="1">
+        {% for finding in host.findings %}
+
+            <tr> 
+                <td>{{ finding.metric }}</td>
+                <td>{{ finding.status }}</td>
+            </tr>
+        {% endfor %}
+        </table>
+        <hr>
+    {% endfor %}
+
+</body>
+</html>
