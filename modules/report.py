@@ -1,8 +1,6 @@
 from email.message import EmailMessage
 import smtplib
-
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-
 
 # Load file
 file_loader = FileSystemLoader("config")
@@ -37,8 +35,8 @@ mock_audit_results = [
     }
 ]
 
-# Pass data and extract string
-html_output = template.render(reports=mock_audit_results)
+def generate_email_report(audit_data):
+    return template.render(reports=audit_data)
 
 def send_email_report(html_content, recipient_email):
     msg = EmailMessage()
@@ -55,5 +53,3 @@ def send_email_report(html_content, recipient_email):
     # connect to server
     with smtplib.SMTP('localhost', 1025) as server:
         server.send_message(msg)
-
-send_email_report(html_output, "test@test.com")

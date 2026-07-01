@@ -47,38 +47,51 @@ def evaluate_ram(ram_data):
     else:
         return {"metric": "RAM Usage", "value": ram_data, "status": "OK"}
 
-def evaluate_services(services_data):
+def evaluate_services(processes_data):
     service_findings = []
-
     critical_services = DEFAULT_THRESHOLDS["services"]["critical_running"]
 
+    running_process_names = [proc["name"] for proc in processes_data]
 
-    for service in services_data:
+    for service_name in critical_services:
+        if service_name in running_process_names:
+            service_findings.append({
+                "metric": f"Service: {service_name}",
+                "value": "Running",
+                "status": "OK"
+            })
+        else:
+            service_findings.append({
+                "metric": f"Service: {service_name}",
+                "value": "Stopped",
+                "status": "CRITICAL"
+            })
 
-        name = service["name"]
-        status = service["status"]
-
-        if name in critical_services:
-
-            if status != "Running":
-                service_findings.append({"metric": f"Service: {name}", "value": status, "status": "CRITICAL"})
-            else:
-                service_findings.append({"metric": f"Service: {name}", "value": status, "status": "OK"})
-    
     return service_findings
 
 def check_host_health(raw_collector_data):
 
-    cpu_finding = evaluate_cpu(raw_collector_data["cpu"])
+    disk_used = raw_collector_data.get("Disk_Usage_Used", 0)
+    disk_free = raw_collector_data.get("Disk_Usage_Free", 0)
+    total_disk = disk_used + disk_free
 
-    disk_finding = evaluate_disk(raw_collector_data["disk"])
+    if total_disk > 0:
+        free_percent = (disk_free / total_disk) * 100
+    else:
+        free_percent = 0
 
-    ram_finding = evaluate_ram(raw_collector_data["ram"])
+    processed_disk_data = {"free": round(free_percent, 1)}
+    ram_percent = raw_collector_data.get("RAM Percent", 0)
 
-    services_finding = evaluate_services(raw_collector_data["services"])
+    cpu_finding = evaluate_cpu(raw_collector_data["CPU_Usage"])
+    disk_finding = evaluate_disk(processed_disk_data)
+    ram_finding = evaluate_ram(ram_percent)
+
+    services_finding = evaluate_services(raw_collector_data.get("Processes", []))
 
     master_list = [cpu_finding, disk_finding, ram_finding]
 
     for item in services_finding:
         master_list.append(item)
+
     return master_list
