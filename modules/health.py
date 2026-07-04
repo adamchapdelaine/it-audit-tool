@@ -10,7 +10,7 @@ DEFAULT_THRESHOLDS = {
         "critical_percent": 85
     },
     "services": {
-        "critical_running": ["Print Spooler", "LanmanServer", "Dhcp"]
+        "critical_running": ["Dhcp", "Dnscache", "LanmanServer", "wuauserv", "Winmgmt"]
     }
 }
 
@@ -47,14 +47,16 @@ def evaluate_ram(ram_data):
     else:
         return {"metric": "RAM Usage", "value": ram_data, "status": "OK"}
 
-def evaluate_services(processes_data):
+def evaluate_services(services_data):
     service_findings = []
     critical_services = DEFAULT_THRESHOLDS["services"]["critical_running"]
 
-    running_process_names = [proc["name"] for proc in processes_data]
+    service_map = {svc["name"]: svc.get("status", "Stopped").title() for svc in services_data}
 
     for service_name in critical_services:
-        if service_name in running_process_names:
+        current_status = service_map.get(service_name, "Stopped")
+
+        if current_status == "Running":
             service_findings.append({
                 "metric": f"Service: {service_name}",
                 "value": "Running",
@@ -63,11 +65,24 @@ def evaluate_services(processes_data):
         else:
             service_findings.append({
                 "metric": f"Service: {service_name}",
-                "value": "Stopped",
+                "value": current_status,
                 "status": "CRITICAL"
             })
 
     return service_findings
+
+def evaluate_antivirus(av_data):
+    if not av_data:
+        return {"metric": "Antivirus Status", "value": "Missing / None", "status": "CRITICAL"}
+
+    unique_avs = list(set([str(av) for av in av_data if av]))
+
+    av_string = ", ".join(unique_avs)
+
+    if len(unique_avs) > 0:
+        return {"metric": "Antivirus Status", "value": av_string, "status": "OK"}
+    else:
+        return {"metric": "Antivirus Status", "value": "Disabled", "status": "CRITICAL"}
 
 def check_host_health(raw_collector_data):
 
@@ -89,7 +104,9 @@ def check_host_health(raw_collector_data):
 
     services_finding = evaluate_services(raw_collector_data.get("Processes", []))
 
-    master_list = [cpu_finding, disk_finding, ram_finding]
+    av_finding = evaluate_antivirus(raw_collector_data.get("AV_Status", []))
+
+    master_list = [cpu_finding, disk_finding, ram_finding, av_finding]
 
     for item in services_finding:
         master_list.append(item)

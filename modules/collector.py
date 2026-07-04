@@ -52,10 +52,15 @@ def getDNS():
 
 def getProcesses():
     f = wmi.WMI()
-    process_list = []
-    for process in f.Win32_Process():
-        process_list.append({"pid": process.ProcessID, "name": process.Name})
-    return process_list[:5]
+    service_list = []
+    
+    for service in f.Win32_Service():
+        service_list.append({
+            "name": service.Name,
+            "display_name": service.DisplayName,
+            "status": service.State
+        })
+    return service_list
 
 def getInstalledAntivirus():
     f = wmi.WMI(namespace=r"root\SecurityCenter2")
