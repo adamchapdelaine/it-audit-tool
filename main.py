@@ -5,7 +5,7 @@ from modules import report
 
 if __name__ == "__main__":
 
-    # argument parser setup
+    # Argument parser setup
     parser = argparse.ArgumentParser(description="IT Audit Report CLI Tool")
    
     parser.add_argument("--local", action="store_true", help="Print the report directly to the console")
@@ -13,7 +13,7 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
 
-    # gathering data
+    # Gathering data
     raw_data = collector.get_snapshot()
     findings_list = health.check_host_health(raw_data)
 
@@ -30,9 +30,7 @@ if __name__ == "__main__":
         for host in audit_results:
             print(f"\nHost: {host['hostname']} ({host['ip_address']})")
             print("-" * 40)
-            # Loop through your live large findings list and print each line cleanly
             for finding in host['findings']:
-                # Adjust these keys if your health.py list uses different names!
                 print(f"- {finding['metric']}: {finding['status']} ({finding['value']})")
         print("=============================\n")
     
